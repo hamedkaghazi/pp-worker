@@ -1,6 +1,6 @@
 import { connect } from 'cloudflare:sockets';
-
-let userID = '78829655-59f6-466b-897d-ea351d4ec82b';
+// 78829655-59f6-466b-897d-ea351d4ec82b
+let userID = '348bf443-fb6f-4459-beb3-7ab3f47e8b98';
 
 // const proxyIPs = [
 //   // 'mtn.ircf.space',
@@ -8,7 +8,7 @@ let userID = '78829655-59f6-466b-897d-ea351d4ec82b';
 //   // 'mci.ircf.space',
 //   // 'rtl.ircf.space',
 // ];
-let proxyIP = []; //proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
+let proxyIP = ['52.29.224.33','18.199.213.201','3.75.149.151']; //proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 
 let dohURL = 'https://dns.google/dns-query'; //'https://1.1.1.1/dns-query';
 // (dohURL) list :
