@@ -1,6 +1,6 @@
 import { connect } from 'cloudflare:sockets';
-// 78829655-59f6-466b-897d-ea351d4ec82b
-let userID = '348bf443-fb6f-4459-beb3-7ab3f47e8b98';
+
+let userID = '228bf223-fb6f-4459-beb4-7ab3f47e8b96';
 
 // const proxyIPs = [
 //   // 'mtn.ircf.space',
@@ -8,9 +8,13 @@ let userID = '348bf443-fb6f-4459-beb3-7ab3f47e8b98';
 //   // 'mci.ircf.space',
 //   // 'rtl.ircf.space',
 // ];
-let proxyIP = ['52.29.224.33','18.199.213.201','3.75.149.151']; //proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 
-let dohURL = 'https://dns.google/dns-query'; //'https://1.1.1.1/dns-query';
+// const proxyIPs = ['172.86.95.236','167.71.45.93']; //us
+// const proxyIPs = ['213.183.44.184','31.172.73.59']; //ge
+// const proxyIPs = ['184.169.181.217','72.13.122.137'];//us
+let proxyIP = '31.172.73.59'; //proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
+
+let dohURL = 'https://dns.google/dns-query'; //'https://dns.google/dns-query'; //'https://1.1.1.1/dns-query';
 // (dohURL) list :
 // https://cloudflare-dns.com/dns-query
 // https://dns.google/dns-query
@@ -99,7 +103,7 @@ export default {
             // return new Response('Not found', { status: 404 });
             // For any other path, reverse proxy to 'www.fmprc.gov.cn' and return the original response
             url.hostname =
-              Math.random() < 0.5 ? 'www.gov.cn' : 'www.fmprc.gov.cn';
+              Math.random() < 0.5 ? 'acme.com' : 'acme.com';
             url.protocol = 'https:';
             request = new Request(url, request);
             return await fetch(request);
@@ -202,7 +206,7 @@ async function vlOverWSHandler(request) {
               log
             );
             udpStreamWrite = write;
-            udpStreamWrite(rawClientData);
+            await udpStreamWrite(rawClientData);
             return;
           }
           handleTCPOutBound(
@@ -213,7 +217,10 @@ async function vlOverWSHandler(request) {
             webSocket,
             vlResponseHeader,
             log
-          );
+          ).catch((error) => {
+            log('TCP outbound error', error);
+            safeCloseWebSocket(webSocket);
+          });
         },
         close() {
           log(`readableWebSocketStream is close`);
@@ -294,7 +301,7 @@ async function handleTCPOutBound(
 
   // when remoteSocket is ready, pass to websocket
   // remote--> ws
-  remoteSocketToWS(tcpSocket, webSocket, vlResponseHeader, retry, log);
+  await remoteSocketToWS(tcpSocket, webSocket, vlResponseHeader, retry, log);
 }
 
 /**
@@ -548,7 +555,7 @@ async function remoteSocketToWS(
   // 2. Socket.readable will be close without any data coming
   if (hasIncomingData === false && retry) {
     log(`retry`);
-    retry();
+    await retry();
   }
 }
 
@@ -722,8 +729,8 @@ async function handleUDPOutBound(webSocket, vlResponseHeader, log) {
      *
      * @param {Uint8Array} chunk
      */
-    write(chunk) {
-      writer.write(chunk);
+    async write(chunk) {
+      await writer.write(chunk);
     },
   };
 }
