@@ -66,8 +66,8 @@ export default {
               try {
                 await writer.write(
                   new TextEncoder().encode(
-                    'GET / HTTP/1.1\r\nHost: ' + hostname + '\r\n\r\n'
-                  )
+                    'GET / HTTP/1.1\r\nHost: ' + hostname + '\r\n\r\n',
+                  ),
                 );
               } catch (writeError) {
                 writer.releaseLock();
@@ -102,11 +102,14 @@ export default {
           default:
             // return new Response('Not found', { status: 404 });
             // For any other path, reverse proxy to 'www.fmprc.gov.cn' and return the original response
-            url.hostname =
-              Math.random() < 0.5 ? 'acme.com' : 'acme.com';
-            url.protocol = 'https:';
-            request = new Request(url, request);
-            return await fetch(request);
+            return new Response('hello world!!', {
+              status: 200,
+              headers: { 'Content-Type': 'application/json;charset=utf-8' },
+            });
+          // url.hostname = Math.random() < 0.5 ? "acme.com" : "acme.com";
+          // url.protocol = "https:";
+          // request = new Request(url, request);
+          // return await fetch(request);
         }
       } else {
         return await vlOverWSHandler(request);
@@ -132,7 +135,7 @@ async function vlOverWSHandler(request) {
   let portWithRandomLog = '';
   const log = (
     /** @type {string} */ info,
-    /** @type {string | undefined} */ event
+    /** @type {string | undefined} */ event,
   ) => {
     console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
   };
@@ -141,7 +144,7 @@ async function vlOverWSHandler(request) {
   const readableWebSocketStream = makeReadableWebSocketStream(
     webSocket,
     earlyDataHeader,
-    log
+    log,
   );
 
   /** @type {{ value: import("@cloudflare/workers-types").Socket | null}}*/
@@ -203,7 +206,7 @@ async function vlOverWSHandler(request) {
             const { write } = await handleUDPOutBound(
               webSocket,
               vlResponseHeader,
-              log
+              log,
             );
             udpStreamWrite = write;
             await udpStreamWrite(rawClientData);
@@ -216,7 +219,7 @@ async function vlOverWSHandler(request) {
             rawClientData,
             webSocket,
             vlResponseHeader,
-            log
+            log,
           ).catch((error) => {
             log('TCP outbound error', error);
             safeCloseWebSocket(webSocket);
@@ -228,7 +231,7 @@ async function vlOverWSHandler(request) {
         abort(reason) {
           log(`readableWebSocketStream is abort`, JSON.stringify(reason));
         },
-      })
+      }),
     )
     .catch((err) => {
       log('readableWebSocketStream pipeTo error', err);
@@ -259,7 +262,7 @@ async function handleTCPOutBound(
   rawClientData,
   webSocket,
   vlResponseHeader,
-  log
+  log,
 ) {
   /**
    * Connects to a given address and port and writes data to the socket.
@@ -285,7 +288,7 @@ async function handleTCPOutBound(
   async function retry() {
     const tcpSocket = await connectAndWrite(
       proxyIP || addressRemote,
-      portRemote
+      portRemote,
     );
     tcpSocket.closed
       .catch((error) => {
@@ -398,7 +401,7 @@ function processVlHeader(vlBuffer, userID) {
   //skip opt for now
 
   const command = new Uint8Array(
-    vlBuffer.slice(18 + optLength, 18 + optLength + 1)
+    vlBuffer.slice(18 + optLength, 18 + optLength + 1),
   )[0];
 
   // 0x01 TCP
@@ -421,7 +424,7 @@ function processVlHeader(vlBuffer, userID) {
 
   let addressIndex = portIndex + 2;
   const addressBuffer = new Uint8Array(
-    vlBuffer.slice(addressIndex, addressIndex + 1)
+    vlBuffer.slice(addressIndex, addressIndex + 1),
   );
 
   // 1--> ipv4  addressLength =4
@@ -435,22 +438,22 @@ function processVlHeader(vlBuffer, userID) {
     case 1:
       addressLength = 4;
       addressValue = new Uint8Array(
-        vlBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
+        vlBuffer.slice(addressValueIndex, addressValueIndex + addressLength),
       ).join('.');
       break;
     case 2:
       addressLength = new Uint8Array(
-        vlBuffer.slice(addressValueIndex, addressValueIndex + 1)
+        vlBuffer.slice(addressValueIndex, addressValueIndex + 1),
       )[0];
       addressValueIndex += 1;
       addressValue = new TextDecoder().decode(
-        vlBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
+        vlBuffer.slice(addressValueIndex, addressValueIndex + addressLength),
       );
       break;
     case 3:
       addressLength = 16;
       const dataView = new DataView(
-        vlBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
+        vlBuffer.slice(addressValueIndex, addressValueIndex + addressLength),
       );
       // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
       const ipv6 = [];
@@ -498,7 +501,7 @@ async function remoteSocketToWS(
   webSocket,
   vlResponseHeader,
   retry,
-  log
+  log,
 ) {
   // remote--> ws
   let remoteChunkCount = 0;
@@ -536,14 +539,14 @@ async function remoteSocketToWS(
         },
         close() {
           log(
-            `remoteConnection!.readable is close with hasIncomingData is ${hasIncomingData}`
+            `remoteConnection!.readable is close with hasIncomingData is ${hasIncomingData}`,
           );
           // safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
         },
         abort(reason) {
           console.error(`remoteConnection!.readable abort`, reason);
         },
-      })
+      }),
     )
     .catch((error) => {
       console.error(`remoteSocketToWS has exception `, error.stack || error);
@@ -667,7 +670,7 @@ async function handleUDPOutBound(webSocket, vlResponseHeader, log) {
         const lengthBuffer = chunk.slice(index, index + 2);
         const udpPakcetLength = new DataView(lengthBuffer).getUint16(0);
         const udpData = new Uint8Array(
-          chunk.slice(index + 2, index + 2 + udpPakcetLength)
+          chunk.slice(index + 2, index + 2 + udpPakcetLength),
         );
         index = index + 2 + udpPakcetLength;
         controller.enqueue(udpData);
@@ -689,7 +692,7 @@ async function handleUDPOutBound(webSocket, vlResponseHeader, log) {
                 'content-type': 'application/dns-message',
               },
               body: chunk,
-            }
+            },
           );
           const dnsQueryResult = await resp.arrayBuffer();
           const udpSize = dnsQueryResult.byteLength;
@@ -702,7 +705,7 @@ async function handleUDPOutBound(webSocket, vlResponseHeader, log) {
             log(`doh success and dns message length is ${udpSize}`);
             if (isVlHeaderSent) {
               webSocket.send(
-                await new Blob([udpSizeBuffer, dnsQueryResult]).arrayBuffer()
+                await new Blob([udpSizeBuffer, dnsQueryResult]).arrayBuffer(),
               );
             } else {
               webSocket.send(
@@ -710,13 +713,13 @@ async function handleUDPOutBound(webSocket, vlResponseHeader, log) {
                   vlResponseHeader,
                   udpSizeBuffer,
                   dnsQueryResult,
-                ]).arrayBuffer()
+                ]).arrayBuffer(),
               );
               isVlHeaderSent = true;
             }
           }
         },
-      })
+      }),
     )
     .catch((error) => {
       log('dns udp has error' + error);
